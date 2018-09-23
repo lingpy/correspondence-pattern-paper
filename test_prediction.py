@@ -12,7 +12,7 @@ import codecs
 def run_experiments(f, ref, ratio, subset=None, runs=100, refine_patterns=False,
         sort_sites=False, verbose=False, fuzzy=True, samples=1,
         score_mode='ranked'):
-    outfile = codecs.copen(f.split('/')[-1][:-4]+'-results.txt', 'w', 'utf-8')
+    outfile = codecs.open(f.split('/')[-1][:-4]+'-results.txt', 'w', 'utf-8')
     cpb = CoPaR(f, ref=ref, fuzzy=fuzzy, split_on_tones=False)
     all_scores = []
     all_samples = set()
@@ -149,9 +149,10 @@ def run_experiments(f, ref, ratio, subset=None, runs=100, refine_patterns=False,
             all_pud[p] += [pudity[p]]
             all_words[p] += [cov[p]]
             all_sounds[p] += [len(sounds[p])]
-        outfile.write(str(run)+'\t'+'\t'.join(['{0:.2f}'.format(x) for x in
+        outfile.write(str(run+1)+'\t'+'\t'.join(['{0:.2f}'.format(x) for x in
             all_scores[-1]])+'\n')
-        print('{0:.2f} / {1:.2f}'.format(sum(scores) / len(scores), len(cp) / len(cpb))
+        print('{0:.2f} / {1:.2f}'.format(sum(scores) / len(scores), len(cp) /
+            len(cpb)))
 
     
     new_scores = [[
