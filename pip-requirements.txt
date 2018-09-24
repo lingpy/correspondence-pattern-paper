@@ -1,0 +1,4 @@
+lingpy
+sinopy
+lingrex
+scipy
