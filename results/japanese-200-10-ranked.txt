@@ -1,2 +1,0 @@
-accuracy	proportion	density	fuzziness	coverage	purity	sounds	missing	ubound	clusters	props	patterns
-1	0.6026	0.5468	0.5838	0.6905	0.2192	0.7514	36.6000	0.1581	1176.0000	295.0000	0.2509	1179.0000
