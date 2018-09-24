@@ -12,8 +12,22 @@ import codecs
 def run_experiments(f, ref, ratio, subset=None, runs=100, refine_patterns=False,
         sort_sites=False, verbose=False, fuzzy=True, samples=1,
         score_mode='ranked'):
-    outfile = codecs.open(f.split('/')[-1][:-4]+'-results.txt', 'w', 'utf-8')
+
+    outfile = codecs.open(
+            'results/'+f.split('/')[-1][:-4]+'-'+str(int(ratio*100+0.5))+'-'+score_mode+'.txt', 
+            'w', 'utf-8')
+    outfile.write('\t'.join([
+            'accuracy', 'proportion', 'density', 'fuzziness', 'coverage',
+            'purity', 'sounds', 'missing', 'ubound', 'clusters', 'props',
+            'patterns'])+'\n')
+
     cpb = CoPaR(f, ref=ref, fuzzy=fuzzy, split_on_tones=False)
+
+    inout = codecs.open(
+            'results/'+f.split('/')[-1][:-4]+'-individual-'+str(int(ratio*100+0.5))+'-'+score_mode+'.tsv', 
+            'w', 'utf-8')
+    inout.write('\t'.join(['run', 'doculect','accuracy', 'purity', 'words', 'sounds'])+'\n')
+
     all_scores = []
     all_samples = set()
     all_pscores = {d: [] for d in cpb.cols}
@@ -25,20 +39,27 @@ def run_experiments(f, ref, ratio, subset=None, runs=100, refine_patterns=False,
             all_samples.add((key, ' '.join(alm), t))
    
     for run in range(runs):    
-        remove_idxs = random.sample(all_samples, int(len(all_samples)*ratio +
-            0.5))
+        remove_idxs = random.sample(all_samples, int(len(all_samples)*ratio+0.5))
         D = {0: cpb.columns}
-        for idx, cogid, alm, tax in cpb.iter_rows(ref, 'alignment', 'doculect'):
+        for idx, cogid, alm, tax, tokens, structures in cpb.iter_rows(
+                ref, 'alignment', 'doculect', 'tokens', 'structure'):
             if fuzzy:
-                cogids = []
-                for c in cogid:
-                    if (c, str(alm), tax) not in remove_idxs:
+                cogids, alms, toks, strucs = [], [], [], []
+                for c, a, t, s in zip(cogid, lists(alm).n, lists(tokens).n,
+                        lists(structures).n):
+                    if (c, str(a), tax) not in remove_idxs:
                         cogids += [c]
+                        alms += [str(a)]
+                        toks += [str(t)]
+                        strucs += [str(s)]
                 if not cogids:
                     pass
                 else:
                     D[idx] = cpb[idx]
                     D[idx][cpb.header[ref]] = ints(cogids)
+                    D[idx][cpb.header['segments']] = ' + '.join(toks)
+                    D[idx][cpb.header['structure']] = ' + '.join(strucs)
+                    D[idx][cpb.header['alignment']] = ' + '.join(alms)
             else:
                 if (cogid, str(alm), tax) in remove_idxs:
                     pass
@@ -52,7 +73,6 @@ def run_experiments(f, ref, ratio, subset=None, runs=100, refine_patterns=False,
             cp.get_sites(minrefs=2, structure='structure')
             if sort_sites:
                 cp.sort_sites()
-            #cp.greedy_color()
             cp.cluster_sites(score_mode=score_mode, iterations=2)
             cp.sites_to_pattern()
             if refine_patterns:
@@ -78,6 +98,7 @@ def run_experiments(f, ref, ratio, subset=None, runs=100, refine_patterns=False,
         for k, v in predicted.items():
             for doc in v:
                 if (k, doc) in our_sample and (doc == subset or not subset):
+                    
                     # check for different alignments
                     msaA = cp.msa[ref][k]
                     msaB = cpb.msa[ref][k]
@@ -98,6 +119,7 @@ def run_experiments(f, ref, ratio, subset=None, runs=100, refine_patterns=False,
                                 out += [i]
                     else:
                         out = []
+
                     wA, wB = v[doc], our_sample[k, doc]
                     ms = 0
                     wB = strings([x for i, x in enumerate(wB) if i not in out]) 
@@ -149,7 +171,16 @@ def run_experiments(f, ref, ratio, subset=None, runs=100, refine_patterns=False,
             all_pud[p] += [pudity[p]]
             all_words[p] += [cov[p]]
             all_sounds[p] += [len(sounds[p])]
-        outfile.write(str(run+1)+'\t'+'\t'.join(['{0:.2f}'.format(x) for x in
+
+            inout.write('\t'.join([
+                str(run+1),
+                p, 
+                str(all_pscores[p][-1]), 
+                str(pudity[p]), 
+                str(cov[p]),
+                str(len(sounds[p]))
+                ])+'\n')
+        outfile.write(str(run+1)+'\t'+'\t'.join(['{0:.4f}'.format(x) for x in
             all_scores[-1]])+'\n')
         print('{0:.2f} / {1:.2f}'.format(sum(scores) / len(scores), len(cp) /
             len(cpb)))
@@ -180,21 +211,21 @@ def run_experiments(f, ref, ratio, subset=None, runs=100, refine_patterns=False,
     
     table = [['doculect', 'accuracy', 'purity', 'sounds', 'words']]
 
-    for doc in all_pscores:
-        table += [[doc, 
-            round(sum(all_pscores[doc]) / runs, 4),
-            round(sum(all_pud[doc]) / runs, 4),
-            round(sum(all_sounds[doc]) / runs, 4),
-            round(sum(all_words[doc]) / runs, 4)
-            ]]
-    print('')
-    print(tabulate(table, headers='firstrow'))
+    #for doc in all_pscores:
+    #    table += [[doc, 
+    #        round(sum(all_pscores[doc]) / runs, 4),
+    #        round(sum(all_pud[doc]) / runs, 4),
+    #        round(sum(all_sounds[doc]) / runs, 4),
+    #        round(sum(all_words[doc]) / runs, 4)
+    #        ]]
+    #print('')
+    #print(tabulate(table, headers='firstrow'))
 
-    accs = [x[1] for x in table[1:]]
-    puds = [x[2] for x in table[1:]]
-    p, r = spearmanr(accs, puds)
-    print('')
-    print('{0:.2f} p <= {1:.6f}'.format(p, r))
+    #accs = [x[1] for x in table[1:]]
+    #puds = [x[2] for x in table[1:]]
+    #p, r = spearmanr(accs, puds)
+    #print('')
+    #print('{0:.2f} p <= {1:.6f}'.format(p, r))
 
     return purity, pudity, sounds, cp
 
