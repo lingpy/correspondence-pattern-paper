@@ -9,25 +9,37 @@ from scipy.stats import spearmanr
 import codecs
 
 
-def run_experiments(f, ref, ratio, subset=None, runs=100, refine_patterns=False,
-        sort_sites=False, verbose=False, fuzzy=True, samples=1,
-        score_mode='ranked'):
-
-    outfile = codecs.open(
-            'results/'+f.split('/')[-1][:-4]+'-'+str(int(ratio*100+0.5))+'-'+score_mode+'.txt', 
-            'w', 'utf-8')
-    outfile.write('\t'.join([
-            'accuracy', 'proportion', 'density', 'fuzziness', 'coverage',
-            'purity', 'sounds', 'missing', 'ubound', 'clusters', 'props',
-            'patterns'])+'\n')
+def run_experiments(
+        f, 
+        ref, 
+        ratio, 
+        subset=None, 
+        runs=100, 
+        refine_patterns=False,
+        verbose=False, 
+        fuzzy=True, 
+        samples=1, 
+        noout=False
+        ):
+    
+    if not noout:
+        outfile = codecs.open(
+                'results/'+f.split('/')[-1][:-4]+'-'+str(int(ratio*100+0.5))+'-'+score_mode+'.txt', 
+                'w', 'utf-8')
+        outfile.write('\t'.join([
+                'accuracy', 'proportion', 'density', 'fuzziness', 'coverage',
+                'purity', 'sounds', 'missing', 'ubound', 'clusters', 'props',
+                'patterns'])+'\n')
 
     cpb = CoPaR(f, ref=ref, fuzzy=fuzzy, split_on_tones=False)
-
-    inout = codecs.open(
-            'results/'+f.split('/')[-1][:-4]+'-individual-'+str(int(ratio*100+0.5))+'-'+score_mode+'.tsv', 
-            'w', 'utf-8')
-    inout.write('\t'.join(['run', 'doculect','accuracy', 'purity', 'words', 'sounds'])+'\n')
-
+    
+    if not noout:
+        inout = codecs.open(
+                'results/'+f.split('/')[-1][:-4]+'-individual-'+str(int(ratio*100+0.5))+'-'+score_mode+'.tsv', 
+                'w', 'utf-8')
+        inout.write('\t'.join(['run', 'doculect','accuracy', 'purity', 'words', 'sounds'])+'\n')
+    
+    # define the scores
     all_scores = []
     all_samples = set()
     all_pscores = {d: [] for d in cpb.cols}
@@ -71,9 +83,7 @@ def run_experiments(f, ref, ratio, subset=None, runs=100, refine_patterns=False,
             cp.load_patterns()
         else:
             cp.get_sites(minrefs=2, structure='structure')
-            if sort_sites:
-                cp.sort_sites()
-            cp.cluster_sites(score_mode=score_mode, iterations=2)
+            cp.cluster_sites(score_mode=score_mode)
             cp.sites_to_pattern()
             if refine_patterns:
                 cp.refine_patterns()
@@ -171,17 +181,19 @@ def run_experiments(f, ref, ratio, subset=None, runs=100, refine_patterns=False,
             all_pud[p] += [pudity[p]]
             all_words[p] += [cov[p]]
             all_sounds[p] += [len(sounds[p])]
-
-            inout.write('\t'.join([
-                str(run+1),
-                p, 
-                str(all_pscores[p][-1]), 
-                str(pudity[p]), 
-                str(cov[p]),
-                str(len(sounds[p]))
-                ])+'\n')
-        outfile.write(str(run+1)+'\t'+'\t'.join(['{0:.4f}'.format(x) for x in
-            all_scores[-1]])+'\n')
+            
+            if not noout:
+                inout.write('\t'.join([
+                    str(run+1),
+                    p, 
+                    str(all_pscores[p][-1]), 
+                    str(pudity[p]), 
+                    str(cov[p]),
+                    str(len(sounds[p]))
+                    ])+'\n')
+        if not noout:
+            outfile.write(str(run+1)+'\t'+'\t'.join(['{0:.4f}'.format(x) for x in
+                all_scores[-1]])+'\n')
         print('{0:.2f} / {1:.2f}'.format(sum(scores) / len(scores), len(cp) /
             len(cpb)))
 
@@ -206,28 +218,32 @@ def run_experiments(f, ref, ratio, subset=None, runs=100, refine_patterns=False,
 
 
             ]]
-    outfile.close()
-    print(tabulate(new_scores, headers='firstrow'))
-    
-    table = [['doculect', 'accuracy', 'purity', 'sounds', 'words']]
+    if not noout:
+        outfile.close()
+        inoout.close()
 
-    #for doc in all_pscores:
-    #    table += [[doc, 
-    #        round(sum(all_pscores[doc]) / runs, 4),
-    #        round(sum(all_pud[doc]) / runs, 4),
-    #        round(sum(all_sounds[doc]) / runs, 4),
-    #        round(sum(all_words[doc]) / runs, 4)
-    #        ]]
-    #print('')
-    #print(tabulate(table, headers='firstrow'))
 
-    #accs = [x[1] for x in table[1:]]
-    #puds = [x[2] for x in table[1:]]
-    #p, r = spearmanr(accs, puds)
-    #print('')
-    #print('{0:.2f} p <= {1:.6f}'.format(p, r))
+    if noout:
+        print(tabulate(new_scores, headers='firstrow'))
+        
+        table = [['doculect', 'accuracy', 'purity', 'sounds', 'words']]
+        for doc in all_pscores:
+            table += [[doc, 
+                round(sum(all_pscores[doc]) / runs, 4),
+                round(sum(all_pud[doc]) / runs, 4),
+                round(sum(all_sounds[doc]) / runs, 4),
+                round(sum(all_words[doc]) / runs, 4)
+                ]]
+        print('')
+        print(tabulate(table, headers='firstrow'))
 
-    return purity, pudity, sounds, cp
+        accs = [x[1] for x in table[1:]]
+        puds = [x[2] for x in table[1:]]
+        p, r = spearmanr(accs, puds)
+        print('')
+        print('{0:.2f} p <= {1:.6f}'.format(p, r))
+
+        return purity, pudity, sounds, cp
 
 if __name__ == '__main__':
     from sys import argv
@@ -242,14 +258,13 @@ if __name__ == '__main__':
     rsites = False
     samples = 1
     score_mode='pairs'
+    noout = False
     
     # parse arguments
     if '--refine' in argv:
         rsites = True
     if '-r' in argv:
         ratio = float(argv[argv.index('-r')+1])
-    if '-p' in argv:
-        proto = argv[argv.index('-p')+1]
     if '-c' in argv:
         ref = argv[argv.index('-c')+1]
     if '-v' in argv:
@@ -262,10 +277,18 @@ if __name__ == '__main__':
         fuzzy = True
     if '--samples' in argv:
         samples = int(argv[argv.index('--samples')+1])
-    if '--score' in argv:
-        score_mode = argv[argv.index('--score')+1]
+    if '--noout' in argv:
+        noout = True
         
-    p1, p2, p3, cop = run_experiments(f, ref, ratio, subset=proto, fuzzy=fuzzy, verbose=verbose,
-            runs=runs, refine_patterns=rsites, sort_sites=False,
-            samples=samples, score_mode=score_mode)
+    p1, p2, p3, cop = run_experiments(
+            f, 
+            ref, 
+            ratio, 
+            fuzzy=fuzzy, 
+            verbose=verbose,
+            runs=runs, 
+            refine_patterns=rsites, 
+            samples=samples, 
+            noout=noout
+            )
     
