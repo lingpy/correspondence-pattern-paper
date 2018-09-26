@@ -19,7 +19,8 @@ def run_experiments(
         verbose=False, 
         fuzzy=True, 
         samples=1, 
-        noout=False
+        noout=False,
+        score_mode='pairs'
         ):
     
     if not noout:
@@ -257,7 +258,6 @@ if __name__ == '__main__':
     runs = 100
     rsites = False
     samples = 1
-    score_mode='pairs'
     noout = False
     
     # parse arguments
@@ -289,6 +289,7 @@ if __name__ == '__main__':
             runs=runs, 
             refine_patterns=rsites, 
             samples=samples, 
-            noout=noout
+            noout=noout,
+            score_mode='pairs'
             )
     
