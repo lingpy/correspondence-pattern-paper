@@ -221,7 +221,7 @@ def run_experiments(
             ]]
     if not noout:
         outfile.close()
-        inoout.close()
+        inout.close()
 
 
     if noout:
