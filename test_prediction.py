@@ -29,8 +29,8 @@ def run_experiments(
                 'w', 'utf-8')
         outfile.write('\t'.join([
                 'accuracy', 'proportion', 'density', 'fuzziness', 'coverage',
-                'purity', 'sounds', 'missing', 'ubound', 'clusters', 'props',
-                'patterns'])+'\n')
+                'purity', 'sounds', 'missing', 'csetsize', 'clusters', 'props',
+                'patterns', 'predicted', 'predictable', 'removed'])+'\n')
 
     cpb = CoPaR(f, ref=ref, fuzzy=fuzzy, split_on_tones=False)
     
@@ -105,11 +105,13 @@ def run_experiments(
                 
         predicted, purity, pudity = cp.predict_words(minrefs=2, samples=samples)
         scores = []
-        unknown, all_segs = 0, 0
+        unknown, all_segs, predictable, cogsize = 0, 0, 0, 0
         for k, v in predicted.items():
             for doc in v:
                 if (k, doc) in our_sample and (doc == subset or not subset):
-                    
+                    predictable += 1
+                    cogsize += len(cp.msa[ref][k]['ID'])
+
                     # check for different alignments
                     msaA = cp.msa[ref][k]
                     msaB = cpb.msa[ref][k]
@@ -166,13 +168,23 @@ def run_experiments(
                         print('--->')
                     scores += [score]
         ubound = cp.upper_bound()
-        all_scores += [(sum(scores) / len(scores), len(cp) / len(cpb),
-            density(cp, ref=ref), cp.fuzziness(),
+        all_scores += [(
+            sum(scores) / len(scores),         
+            len(cp) / len(cpb),
+            density(cp, ref=ref), 
+            cp.fuzziness(),
             cp.stats(score_mode=score_mode), 
-            sum(pudity.values()) / len(pudity.values()), ave, unknown/all_segs,
-            ubound, len(cp.clusters), len(cp.clusters) / ubound,
-            len(cp.sites))
-            ]
+            sum(pudity.values()) / len(pudity.values()), 
+            ave, 
+            unknown/all_segs,
+            cogsize / predictable, 
+            len(cp.clusters), 
+            len(cp.clusters) / ubound,
+            len(cp.sites),
+            predictable / len(remove_idxs),
+            predictable,
+            len(remove_idxs),
+            )]
         if verbose:
             print('{0:.2f}'.format(all_scores[-1][0]))
         
@@ -201,8 +213,8 @@ def run_experiments(
     
     new_scores = [[
             'accuracy', 'proportion', 'density', 'fuzziness', 'coverage',
-            'purity', 'sounds', 'missing', 'ubound', 'clusters', 'props',
-            'patterns']]
+            'purity', 'sounds', 'missing', 'csetsize', 'clusters', 'props',
+            'patterns', 'predicted', 'predictable', 'removed']]
     new_scores += [[
         round(sum([x[0] for x in all_scores]) / len(all_scores), 4),
         round(sum([x[1] for x in all_scores]) / len(all_scores), 4),
@@ -216,7 +228,9 @@ def run_experiments(
         round(sum([x[9] for x in all_scores]) / len(all_scores), 4),
         round(sum([x[10] for x in all_scores]) / len(all_scores), 4),
         round(sum([x[11] for x in all_scores]) / len(all_scores), 4),
-
+        round(sum([x[12] for x in all_scores]) / len(all_scores), 4),
+        round(sum([x[13] for x in all_scores]) / len(all_scores), 4),
+        round(sum([x[14] for x in all_scores]) / len(all_scores), 4),
 
             ]]
     if not noout:
