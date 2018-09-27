@@ -244,7 +244,7 @@ def run_experiments(
         print('')
         print('{0:.2f} p <= {1:.6f}'.format(p, r))
 
-        return purity, pudity, sounds, cp
+    return purity, pudity, sounds, cp
 
 if __name__ == '__main__':
     from sys import argv
