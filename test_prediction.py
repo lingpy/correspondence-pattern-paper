@@ -290,6 +290,5 @@ if __name__ == '__main__':
             refine_patterns=rsites, 
             samples=samples, 
             noout=noout,
-            score_mode='pairs'
             )
     
