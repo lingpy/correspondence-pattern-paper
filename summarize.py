@@ -14,18 +14,28 @@ content = [
         'purity',
         'sounds',
         'missing',
-        'ubound',
+        'csetsize',
         'clusters',
         'props',
-        'patterns']
+        'patterns',
+        'predicted',
+        'predictable',
+        'removed'
+        ]
 
 selected = ['accuracy', 'proportion', 'density', 'missing', 'sounds']
 table = [['name'] + selected]
 for f in data:
     csv = np.array(csv2list(f, dtype=[float for x in content], header=True))
     if csv.any():
-        scores = {content[i]: csv[:, i] for i in range(len(content))}
-        name = f.split('/')[-1][:-4]
-        table += [[name]+['{0:.2f} / {1:.2f}'.format(
-            scores[h].mean(), scores[h].std()) for h in selected]]
+        try:
+            scores = {content[i]: csv[:, i] for i in range(len(content))}
+            name = f.split('/')[-1][:-4]
+            table += [[name]+['{0:.4f} / {1:.4f}'.format(
+                scores[h].mean(), scores[h].std()) for h in selected]]
+        except:
+            print('no deal for ', f)
+table = [table[0]] + sorted(table[1:], key=lambda x: x[0])
 print(tabulate(table, headers='firstrow'))
+
+
