@@ -1,4 +1,3 @@
-lingpy
-sinopy
-lingrex
-scipy
+-e git+https://github.com/lingpy/lingpy.git
+-e git+https://github.com/lingpy/sinopy.git
+-e git+https://github.com/lingpy/lingrex.git

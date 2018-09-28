@@ -32,7 +32,7 @@ def run_experiments(
                 'patterns', 'predicted', 'predictable', 'removed', 'regular',
                 'purityx'])+'\n')
 
-    cpb = CoPaR(f, ref=ref, fuzzy=fuzzy, split_on_tones=False)
+    cpb = CoPaR(f, ref=ref, fuzzy=fuzzy, split_on_tones=False, segments='segments')
     
     if not noout:
         inout = codecs.open(
@@ -55,7 +55,7 @@ def run_experiments(
         remove_idxs = random.sample(all_samples, int(len(all_samples)*ratio+0.5))
         D = {0: cpb.columns}
         for idx, cogid, alm, tax, tokens, structures in cpb.iter_rows(
-                ref, 'alignment', 'doculect', 'tokens', 'structure'):
+                ref, 'alignment', 'doculect', 'segments', 'structure'):
             if fuzzy:
                 cogids, alms, toks, strucs = [], [], [], []
                 for c, a, t, s in zip(cogid, lists(alm).n, lists(tokens).n,
@@ -79,7 +79,7 @@ def run_experiments(
                 else:
                     D[idx] = cpb[idx]
         
-        cp = CoPaR(D, ref=ref, fuzzy=fuzzy, split_on_tones=False)
+        cp = CoPaR(D, ref=ref, fuzzy=fuzzy, split_on_tones=False, segments='segments')
         if 'l' in argv: 
             cp.load_patterns()
         else:
@@ -286,7 +286,7 @@ if __name__ == '__main__':
         ratio = float(argv[argv.index('-r')+1])
     if '-c' in argv:
         ref = argv[argv.index('-c')+1]
-    if '-v' in argv:
+    if '-v' in argv or '--verbose' in argv:
         verbose = True
     if '--runs' in argv:
         runs = int(argv[argv.index('--runs')+1])
@@ -298,6 +298,9 @@ if __name__ == '__main__':
         samples = int(argv[argv.index('--samples')+1])
     if '--noout' in argv:
         noout = True
+
+    if '--seed' in argv:
+        random.seed(1)
         
     p1, p2, p3, cop = run_experiments(
             f, 
@@ -310,4 +313,13 @@ if __name__ == '__main__':
             samples=samples, 
             noout=noout,
             )
+    if verbose:
+        cop.add_patterns()
+        cop.output(
+                'tsv',
+                filename='results/'+f.split('/')[1].split('-')[0]+str(int(100*ratio+0.5)),
+                ignore='all',
+                prettify=False
+                )
+
     
