@@ -8,7 +8,6 @@ from lingpy.compare.sanity import average_coverage
 from scipy.stats import spearmanr
 import codecs
 
-
 def run_experiments(
         f, 
         ref, 
@@ -25,18 +24,19 @@ def run_experiments(
     
     if not noout:
         outfile = codecs.open(
-                'results/'+f.split('/')[-1][:-4]+'-'+str(int(ratio*100+0.5))+'-'+score_mode+'.txt', 
+                'results/'+f.split('/')[-1][:-4]+'-'+str(int(ratio*100+0.5))+'.txt', 
                 'w', 'utf-8')
         outfile.write('\t'.join([
                 'accuracy', 'proportion', 'density', 'fuzziness', 'coverage',
                 'purity', 'sounds', 'missing', 'csetsize', 'clusters', 'props',
-                'patterns', 'predicted', 'predictable', 'removed'])+'\n')
+                'patterns', 'predicted', 'predictable', 'removed', 'regular',
+                'purityx'])+'\n')
 
     cpb = CoPaR(f, ref=ref, fuzzy=fuzzy, split_on_tones=False)
     
     if not noout:
         inout = codecs.open(
-                'results/'+f.split('/')[-1][:-4]+'-individual-'+str(int(ratio*100+0.5))+'-'+score_mode+'.tsv', 
+                'results/'+f.split('/')[-1][:-4]+'-individual-'+str(int(ratio*100+0.5))+'.tsv', 
                 'w', 'utf-8')
         inout.write('\t'.join(['run', 'doculect','accuracy', 'purity', 'words', 'sounds'])+'\n')
     
@@ -102,6 +102,8 @@ def run_experiments(
         for cogid, alm, doc in remove_idxs:
             our_sample[cogid, doc] = strings(alm)
         pscores = {d: [] for d in cp.cols}
+        
+        regs = sum([len(a[1]) for a in cp.clusters.items() if len(a[1]) > 1]) / len(cp.sites)
                 
         predicted, purity, pudity = cp.predict_words(minrefs=2, samples=samples)
         scores = []
@@ -184,6 +186,8 @@ def run_experiments(
             predictable / len(remove_idxs),
             predictable,
             len(remove_idxs),
+            regs,
+            cp.purity()
             )]
         if verbose:
             print('{0:.2f}'.format(all_scores[-1][0]))
@@ -214,7 +218,7 @@ def run_experiments(
     new_scores = [[
             'accuracy', 'proportion', 'density', 'fuzziness', 'coverage',
             'purity', 'sounds', 'missing', 'csetsize', 'clusters', 'props',
-            'patterns', 'predicted', 'predictable', 'removed']]
+            'patterns', 'predicted', 'predictable', 'removed', 'regs', 'purityx']]
     new_scores += [[
         round(sum([x[0] for x in all_scores]) / len(all_scores), 4),
         round(sum([x[1] for x in all_scores]) / len(all_scores), 4),
@@ -231,7 +235,8 @@ def run_experiments(
         round(sum([x[12] for x in all_scores]) / len(all_scores), 4),
         round(sum([x[13] for x in all_scores]) / len(all_scores), 4),
         round(sum([x[14] for x in all_scores]) / len(all_scores), 4),
-
+        round(sum([x[15] for x in all_scores]) / len(all_scores), 4),
+        round(sum([x[16] for x in all_scores]) / len(all_scores), 4),
             ]]
     if not noout:
         outfile.close()

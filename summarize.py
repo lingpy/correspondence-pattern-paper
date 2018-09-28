@@ -20,10 +20,13 @@ content = [
         'patterns',
         'predicted',
         'predictable',
-        'removed'
+        'removed',
+        'regs',
+        'purityx'
         ]
 
-selected = ['accuracy', 'proportion', 'density', 'missing', 'sounds']
+selected = ['accuracy', 'proportion', 'density', 'missing', 'sounds',
+        'clusters', 'purity', 'regs', 'purityx']
 table = [['name'] + selected]
 for f in data:
     csv = np.array(csv2list(f, dtype=[float for x in content], header=True))
