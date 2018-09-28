@@ -5,7 +5,6 @@ import random
 from lingpy.basictypes import *
 from tabulate import tabulate
 from lingpy.compare.sanity import average_coverage
-from scipy.stats import spearmanr
 import codecs
 
 def run_experiments(
@@ -246,23 +245,6 @@ def run_experiments(
     if noout:
         print(tabulate(new_scores, headers='firstrow'))
         
-        table = [['doculect', 'accuracy', 'purity', 'sounds', 'words']]
-        for doc in all_pscores:
-            table += [[doc, 
-                round(sum(all_pscores[doc]) / runs, 4),
-                round(sum(all_pud[doc]) / runs, 4),
-                round(sum(all_sounds[doc]) / runs, 4),
-                round(sum(all_words[doc]) / runs, 4)
-                ]]
-        print('')
-        print(tabulate(table, headers='firstrow'))
-
-        accs = [x[1] for x in table[1:]]
-        puds = [x[2] for x in table[1:]]
-        p, r = spearmanr(accs, puds)
-        print('')
-        print('{0:.2f} p <= {1:.6f}'.format(p, r))
-
     return purity, pudity, sounds, cp
 
 if __name__ == '__main__':
