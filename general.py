@@ -17,7 +17,8 @@ table = [[
     'patterns',
     'singletons',
     'coverage',
-    'irregulars'
+    'irregulars',
+    'purity'
     ]]
 for f, c in data:
     name = f.split('-')[0]
@@ -37,7 +38,8 @@ for f, c in data:
         singletons,
         '{0:.2f}'.format(
             (len(cp.sites)-singletons) / len(cp.sites)),
-        iregs
+        iregs,
+        cp.purity()
         ]]
     cp.output('tsv', filename='results/out-'+name)
 print(tabulate(table, headers='firstrow', tablefmt='latex')) 

@@ -32,7 +32,7 @@ content = [
         ]
 
 selected = ['proportion', 
-        'clusters', 'regs', 'predicted', 'accuracy']
+        'clusters', 'regs', 'purityx', 'accuracy']
 table = [['name', 'percent'] + selected]
 for d in data:
     for prop in ['25', '50', '75']:
