@@ -13,7 +13,6 @@ def run_experiments(
         ratio, 
         subset=None, 
         runs=100, 
-        refine_patterns=False,
         verbose=False, 
         fuzzy=True, 
         samples=1, 
@@ -31,7 +30,9 @@ def run_experiments(
                 'patterns', 'predicted', 'predictable', 'removed', 'regular',
                 'purityx'])+'\n')
 
-    cpb = CoPaR(f, ref=ref, fuzzy=fuzzy, split_on_tones=False, segments='segments')
+    cpb = CoPaR(f, ref=ref, fuzzy=fuzzy, split_on_tones=False,
+            segments='segments', minrefs=2, structure="structure",
+            transcription="segments")
     
     if not noout:
         inout = codecs.open(
@@ -51,7 +52,7 @@ def run_experiments(
             all_samples.add((key, ' '.join(alm), t))
    
     for run in range(runs):    
-        remove_idxs = random.sample(all_samples, int(len(all_samples)*ratio+0.5))
+        remove_idxs = random.sample(list(all_samples), int(len(all_samples)*ratio+0.5))
         D = {0: cpb.columns}
         for idx, cogid, alm, tax, tokens, structures in cpb.iter_rows(
                 ref, 'alignment', 'doculect', 'segments', 'structure'):
@@ -78,15 +79,15 @@ def run_experiments(
                 else:
                     D[idx] = cpb[idx]
         
-        cp = CoPaR(D, ref=ref, fuzzy=fuzzy, split_on_tones=False, segments='segments')
+        cp = CoPaR(D, ref=ref, fuzzy=fuzzy, split_on_tones=False,
+                segments='segments', minrefs=2, structure="structure",
+                transcription="segments")
         if 'l' in argv: 
             cp.load_patterns()
         else:
-            cp.get_sites(minrefs=2, structure='structure')
+            cp.get_sites()
             cp.cluster_sites(score_mode=score_mode)
             cp.sites_to_pattern()
-            if refine_patterns:
-                cp.refine_patterns()
 
         # compute size of alphabets
         sounds = {d: defaultdict(int) for d in cp.cols}
@@ -257,13 +258,10 @@ if __name__ == '__main__':
     proto = None
     verbose = False
     runs = 100
-    rsites = False
     samples = 1
     noout = False
     
     # parse arguments
-    if '--refine' in argv:
-        rsites = True
     if '-r' in argv:
         ratio = float(argv[argv.index('-r')+1])
     if '-c' in argv:
@@ -291,7 +289,6 @@ if __name__ == '__main__':
             fuzzy=fuzzy, 
             verbose=verbose,
             runs=runs, 
-            refine_patterns=rsites, 
             samples=samples, 
             noout=noout,
             )

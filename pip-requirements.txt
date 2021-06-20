@@ -1,3 +1,2 @@
-lingpy >= 2.6.4
-sinopy >= 0.3.3
-lingrex >= 0.1.0 
+lingpy >= 2.6.8
+lingrex >= 1.0.0 
